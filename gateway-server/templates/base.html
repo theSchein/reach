@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.3.1/css/all.css" integrity="sha384-mzrmE5qonljUremFsqc01SB46JvROS7bZs3IO2EmfFsd15uHvIt+Y8vEf7N7fWAU" crossorigin="anonymous">
+	<link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+	<script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+	<script src="https://code.highcharts.com/highcharts.js"></script>
+	<script src="https://code.highcharts.com/modules/exporting.js"></script>
+	<script src="https://code.highcharts.com/modules/export-data.js"></script>
+
+
+	<title>Reach</title>
+</head>
+<body>
+
+		<nav class="navbar navbar-dark bg-primary" style="background-color: #1a8cff;">
+	    <div class="navbar-header">
+				<span style="font-size: 4em; color: white;">
+					<i class="fas fa-child"></i>
+				</span>
+	      <a class="navbar-brand" href="/" style="font-size: 60px; color: yellow; font-weight: bold;">REACH</a>
+	    </div>
+	    <ul class="nav justify-content-end">
+	    	{% if current_user.is_authenticated %}
+					<a class="nav-item nav-link" href="/profiles" style="color: white">Admin</a>
+					<a class="nav-item nav-link" href="/profiles/needs" style="color: white">Needs Report</a>
+					<a class="nav-item nav-link" href="/logout" style="color: white">Logout</a>
+				{% else %}
+					<a class="nav-item nav-link" href="/login" style="color: white">Login</a>
+				{% endif %}
+	    </ul>
+		</nav>
+		{% with messages = get_flashed_messages() %}
+		  {% if messages %}
+		    <div class='alert alert-warning'>
+		    {% for message in messages %}
+		      <p>{{ message }}</li>
+		    {% endfor %}
+			</div>
+		  {% endif %}
+		{% endwith %}
+
+		{% block header %}{% endblock %}
+
+		{% block content %}{% endblock %}
+
+		<footer class="page-footer font-small blue">
+		  <div class="footer-copyright text-center py-3">© 2018 Copyright:
+		    <a href=""> Reach - Code4PA</a>
+		  </div>
+		</footer>
+
+</body>
+</html>

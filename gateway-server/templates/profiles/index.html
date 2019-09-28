@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block header %}
+<div class="card-header h1" style='text-align: center;'>Client Statuses</div>
+<div class="card-deck">
+  <div class="card border-light">
+    <div class="card-body card-header" style='margin: 2.5em;'>
+      <h5 class="card-title">
+        <span style="font-size: 3em; color: #1a8cff;">
+          {{profiles_count}}
+        </span>
+      </h5>
+      <p class="card-text">Clients Contacted</p>
+    </div>
+  </div>
+
+  <div class="card border-light">
+    <div class="card-body card-header" style='margin: 2.5em;'>
+      <h5 class="card-title">
+        <span style="font-size: 3em; color: #1a8cff;">
+          {{assessments}}
+        </span>
+      </h5>
+      <p class="card-text">Clients Assessed ({{assessment_rate}}%)</p>
+    </div>
+  </div>
+
+  <div class="card border-light">
+    <div class="card-body card-header" style="margin: 2.5em;">
+      <h5 class="card-title">
+        <span style="font-size: 3em; color: #1a8cff;">
+          {{treatments}}
+        </span>
+      </h5>
+      <p class="card-text">Clients in Treatment ({{treatment_rate}}%)</p>
+    </div>
+  </div>
+</div>
+<br>
+<br>
+{% endblock %}
+
+
+{% block content %}
+<div class="card-header h1" style="text-align: center;">Profile Details</div>
+<table id="example" class="display" style="width:100%">
+        <thead>
+            <tr>
+                <th>Nick Name</th>
+                <th>Phone Number</th>
+                <th>City</th>
+                <th>County</th>
+                <th>Needs</th>
+                <th>Demographics</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+					{% for profile in profiles %}
+            <tr>
+							<td>{{profile["itemId"]}}</td>
+              <td>{{profile["properties"]["phoneNumber"]}}</td>
+              <td>{{profile["properties"]["county"]}}</td>
+              <td>{{profile["properties"]["city"]}}</td>
+              <td><ul>
+                {% for need in profile["properties"]["needs"] %}
+							     <li>{{need["name"]}}</li>
+                {% endfor %}
+              </ul></td>
+              <td><ul>
+                {% if 'demographics' in profile["properties"].keys() %}
+                  {% for key, value in profile["properties"]["demographics"].items() %}
+  							     <li>{{key}}: {{value}}</li>
+                  {% endfor %}
+                {% endif %}
+              </ul></td>
+
+							<td><a href="/profiles/{{profile["itemId"]}}">View Profile</a></td>
+            </tr>
+					{% endfor %}
+				</tbody>
+</table>
+<script>
+$(document).ready(function() {
+    $('#example').DataTable();
+} );
+</script>
+
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block header %}
+
+{% endblock %}
+
+
+{% block content %}
+
+		<div class="jumbotron jumbotron-fluid" style="background-color: white">
+		  <div class="container">
+		    <h1 class="display-4">Thank you, we will contact you shortly</h1>
+		    <p class="lead">The phone number you entered will recieve a text message shortly. You will be able to chat directly with us by texting the phone number back. </p>
+		  </div>
+		</div>
+
+		<div class="card-header h1"> How does it work?</div>
+		<div class="card-deck">
+			<div class="card border-light">
+			  <div class="card-body">
+			    <h5 class="card-title">
+						<span style="font-size: 3em; color: #1a8cff;">
+							<i class="far fa-address-card"></i>
+						</span>
+					</h5>
+			    <p class="card-text">Individual consents to connecting with a Certified Recovery Specialist through Reach.</p>
+			  </div>
+			</div>
+
+		  <div class="card border-light">
+		    <div class="card-body">
+		      <h5 class="card-title">
+						<span style="font-size: 3em; color: #1a8cff;">
+							<i class="fas fa-mobile-alt"></i>
+						</span>
+					</h5>
+		      <p class="card-text">Reach connects the CRS directly to the individual through SMS.</p>
+		    </div>
+		  </div>
+
+		  <div class="card border-light">
+		    <div class="card-body">
+		      <h5 class="card-title">
+						<span style="font-size: 3em; color: #1a8cff;">
+							<i class="fas fa-bullseye"></i>
+						</span>
+					</h5>
+		      <p class="card-text">The CRS coordinates meeting with the patient as early as possible. The Individual and CRS develop a plan and create some goals.</p>
+		    </div>
+		  </div>
+
+      <div class="card border-light">
+		    <div class="card-body">
+		      <h5 class="card-title">
+						<span style="font-size: 3em; color: #1a8cff;">
+							<i class="far fa-smile"></i>
+						</span>
+					</h5>
+		      <p class="card-text">The CRS follows up on the individual to help them achieve their goals.</p>
+		    </div>
+		  </div>
+		</div>
+
+		<div class="jumbotron jumbotron-fluid">
+		  <div class="container">
+		    <h1 class="display-4">Sign up</h1>
+				<form class="form-inline" action="/submit" method="POST">
+					 <div class="form-group mx-sm-3 mb-2">
+						 <label for="phone" class="sr-only">Phone Number:</label>
+						 <input type="text" name="number" class="form-control" id="phone" placeholder="215-555-5555">
+					 </div>
+					 <button type="submit" class="btn btn-primary mb-2">Submit</button>
+				 </form>
+
+					<p>By creating an account you agree to our <a href="#" style="color:dodgerblue">Terms & Privacy</a>.</p>
+		  </div>
+		</div>
+{% endblock %}

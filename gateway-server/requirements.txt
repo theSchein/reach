@@ -1,0 +1,7 @@
+flask
+twilio
+slackclient==2.0.0
+coolname
+beautifulsoup4
+websocket-client
+flask_login

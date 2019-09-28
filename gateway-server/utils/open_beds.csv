@@ -1,0 +1,9 @@
+county,treatment_category,gender,max_age,facility,phone,open_beds
+McKean,3B,male,100,Alcohol & Drug Abuse Service Inc - Maple Manor,814-642-9522,1
+McKean,3C,male,100,Alcohol & Drug Abuse Service Inc - Maple Manor,814-642-9522,0
+McKean,3B,female,100,Alcohol & Drug Abuse Service Inc - Maple Manor,814-642-9522,1
+McKean,3C,female,100,Alcohol & Drug Abuse Service Inc - Maple Manor,814-642-9522,0
+Philadelphia,3C,female,18,The Bridge,215-342-5000,2
+Philadelphia,3B,female,18,The Bridge,215-342-5000,2
+Philadelphia,3B,male,18,The Bridge,215-342-5000,2
+Philadelphia,3B,male,18,The Bridge,215-342-5000,2

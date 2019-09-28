@@ -1,0 +1,11 @@
+image:
+  repository: us.gcr.io/reach-hrsa-development/gateway
+  tag: 0.1.0
+
+slack:
+  token: xoxp-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+twilio:
+  account_sid: ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  auth_token: xxxxxxxxxxxxxxxxxxxxxxxxxx
+  message_service_sid: MGxxxxxxxxxxxxxxxxxxxxxxxx

@@ -1,0 +1,33 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.9.0 ()
+  creationTimestamp: null
+  labels:
+    io.kompose.service: unomi
+  name: unomi
+spec:
+  replicas: 1
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: unomi
+    spec:
+      containers:
+      - env:
+        - name: ELASTICSEARCH_HOST
+          value: elasticsearch
+        - name: ELASTICSEARCH_PORT
+          value: "9300"
+        image: mikeghen/unomi:1.3
+        name: unomi
+        ports:
+        - containerPort: 8181
+        - containerPort: 9443
+        resources: {}
+      restartPolicy: Always
+status: {}

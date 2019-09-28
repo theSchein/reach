@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block header %}
+{% endblock %}
+
+{% block content %}
+<div style="width:50%; margin:0 auto; margin-top:100px;">
+  <h3>Please Login:</h3>
+  <form class="form-inline" style="width:50%" action="/login" method="POST" style="margin: 0 auto;">
+    <div class="form-group mx-sm-3 mb-2">
+      <label for="phone" class="sr-only">Username:</label>
+      <input type="text" name="username" class="form-control" placeholder="Username">
+    </div>
+    <div class="form-group mx-sm-3 mb-2">
+      <label for="phone" class="sr-only">Password:</label>
+      <input type="password" name="password" class="form-control" placeholder="Password">
+    </div>
+    <button type="submit" class="btn btn-primary mb-2">Submit</button>
+  </form>
+</div>
+{% endblock %}

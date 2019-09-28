@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+
+{% block header %}
+
+{% endblock %}
+
+<h1 class="display-4">Needs</h1>
+
+{% block content %}
+<div class='row'>
+<div class='col-md-6'>
+  <div id="bar" style="min-width: 310px; max-width: 800px; height: 1200px; margin: 0 auto"></div>
+</div>
+<div class='col-md-6'>
+  <div class='row'>
+
+    <div class='col-md-12'>
+      <div id="container" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+    </div>
+<div class='col-md-12'>
+  <div id="pie" style="min-width: 310px; height: 400px; max-width: 600px; margin: 0 auto"></div>
+  <h2></h2>
+  <table id="example" class="display" style="width:100%">
+          <thead>
+              <tr>
+                  <th>Profile</th>
+                  <th>County</th>
+                  <th>Need</th>
+                  <th>Requested At</th>
+                  <th>Actions</th>
+              </tr>
+          </thead>
+          <tbody>
+  					{% for need in needs %}
+              <tr>
+                <td>{{need[0]}}</td>
+                <td>{{need[2]}}</td>
+  							<td>{{need[1]['name']}}</td>
+                <td>{{need[1]['timeStamp'][0:10]}}</td>
+                <td><a href="/profiles/{{need[0]}}">View Profile</a></tr>
+              </tr>
+  					{% endfor %}
+  				</tbody>
+  </table>
+</div>
+</div>
+</div>
+</div>
+<script>
+$(document).ready(function() {
+    $('#example').DataTable();
+
+    $.ajax({
+          url: "/profiles/needs/data",
+          success: function(data) {
+              console.log(data)
+
+
+              Highcharts.chart('container', {
+                  chart: {
+                      type: 'column'
+                  },
+                  title: {
+                      text: 'Average Days to Treatment'
+                  },
+                  xAxis: {
+                      categories: [
+                          'No barriers',
+                          'Pregnant Women',
+                          'Spanish Speaking',
+                          'Other Language',
+                          'HIV+',
+                          'Mental Health'
+                      ],
+                      crosshair: true
+                  },
+                  yAxis: {
+                      min: 0,
+                      title: {
+                          text: 'Days'
+                      }
+                  },
+                  plotOptions: {
+                      column: {
+                          pointPadding: 0.2,
+                          borderWidth: 0
+                      }
+                  },
+                  series: [{
+                      name: 'Days',
+                      data: [3,22,12,19, 17,8]
+
+                  }]
+              });
+
+              Highcharts.chart('pie', {
+              chart: {
+                  plotBackgroundColor: null,
+                  plotBorderWidth: null,
+                  plotShadow: false,
+                  type: 'pie'
+              },
+              title: {
+                  text: 'Client Needs'
+              },
+              tooltip: {
+                  pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
+              },
+              plotOptions: {
+                  pie: {
+                      allowPointSelect: true,
+                      cursor: 'pointer',
+                      dataLabels: {
+                          enabled: true,
+                          format: '<b>{point.name}</b>: {point.percentage:.1f} %',
+                          style: {
+                              color: (Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black'
+                          }
+                      }
+                  }
+              },
+              series: [{
+                  name: 'Client Needs',
+                  colorByPoint: true,
+                  data: data["pie_data"]
+              }]
+          });
+
+
+          Highcharts.chart('bar', {
+              chart: {
+                  type: 'bar'
+              },
+              title: {
+                  text: 'Needs by County'
+              },
+              xAxis: {
+                  categories: data["counties"]
+              },
+              yAxis: {
+                  min: 0,
+                  title: {
+                      text: 'Total fruit consumption'
+                  }
+              },
+              legend: {
+                  reversed: true
+              },
+              plotOptions: {
+                  series: {
+                      stacking: 'normal'
+                  }
+              },
+              series: data["bar_series"]
+          });
+
+          }
+    });
+
+
+
+
+} );
+</script>
+
+{% endblock %}

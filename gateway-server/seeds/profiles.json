@@ -1,0 +1,43 @@
+
+{
+  "itemId": "vengeful-ant",
+  "itemType": "profile",
+  "version": 1,
+  "properties": {
+  "phoneNumber": "+12154781286",
+      "needs": [
+        {
+          "timeStamp": "2018-10-15T03:18:26Z",
+          "name": "bed"
+        }
+      ],
+      "stage": {
+        "notes": "went to meeting",
+        "name": "action"
+      },
+      "scores": {
+        "recoveryEnvironment": "3",
+        "readinessToChange": "3",
+        "relapseContinuedUsePotential": "2",
+        "intoxicationWithdrawPotential": "2",
+        "emotionalBehavioralConditionsComplications": "1",
+        "biomedicalConditionsComplications": "3"
+      },
+      "state": "PA",
+      "zipcode": "19047",
+      "city": "LANGHORNE",
+      "demographics": [
+        {
+          "gender": "male"
+        },
+        {
+          "age": "26"
+        }
+      ]
+  },
+  "systemProperties": {},
+  "segments": [],
+  "scores": {},
+  "mergedWith": null,
+  "consents": {}
+}
