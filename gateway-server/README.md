@@ -23,9 +23,10 @@ pip3 install -r requirements.txt
 ```
 2. Export the environmental variables for Slack and Twilio:
 ```
-export SLACK_TOKEN=xoxp-443536887682-442805332144-445502414465-15b59a514de786c697d02014262f3b9f
-export TWILIO_ACCOUNT_SID=AC7dcae26ab02956b94cd9418b21d00a29
-export TWILIO_AUTH_TOKEN=f620989294ab4c35f2d2158c1de471c6
+export SLACK_TOKEN=AAAA
+export TWILIO_ACCOUNT_SID=AAAA
+export TWILIO_MESSAGE_SERVICE_ID=AAAA
+export TWILIO_AUTH_TOKEN=AAAA
 export FLASK_APP=app.py
 ```
 3. Run the application:
