@@ -1,3 +1,9 @@
+substitutions:
+  _SLACK_TOKEN: XXXXXX
+  _SLACK_TEAM_ID: XXXXXX
+  _TWILIO_ACCOUNT_SID: XXXXXX
+  _TWILIO_MESSAGE_SERVICE_SID: XXXXXX
+  _TWILIO_AUTH_TOKEN: XXXXXX
 steps:
 - name: 'gcr.io/cloud-builders/docker'
   args: ['pull', 'us.gcr.io/$PROJECT_ID/gateway:latest']
@@ -5,13 +11,27 @@ steps:
   args: ['build', '-t', 'us.gcr.io/$PROJECT_ID/gateway:$COMMIT_SHA', './gateway-server']
 - name: 'gcr.io/cloud-builders/docker'
   args: ['push', 'us.gcr.io/$PROJECT_ID/gateway:$COMMIT_SHA']
-- name: 'gcr.io/cloud-builders/kubectl'
-  args:
-  - set
-  - image
-  - deployment
-  - gateway
-  - gateway=us.gcr.io/$PROJECT_ID/gateway:$COMMIT_SHA
+- name: 'gcr.io/$PROJECT_ID/helm'
+  args: [
+    'upgrade',
+    '--set',
+    'image.tag=$COMMIT_SHA',
+    '--set',
+    'slack.token=$_SLACK_TOKEN',
+    '--set',
+    'slack.team_id=$_SLACK_TEAM_ID',
+    '--set',
+    'twilio.account_sid=$_TWILIO_ACCOUNT_SID',
+    '--set',
+    'twilio.auth_token=$_TWILIO_AUTH_TOKEN',
+    '--set',
+    'twilio.message_service_sid =$_TWILIO_MESSAGE_SERVICE_SID',
+    '--install',
+    'reach',
+    '--namespace',
+    'reach',
+    'reach'
+  ]
   env:
   - 'CLOUDSDK_COMPUTE_ZONE=us-east4-a'
   - 'CLOUDSDK_CONTAINER_CLUSTER=primary'
