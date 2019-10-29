@@ -24,7 +24,7 @@ spec:
         - name: FLASK_ENV
           value: development
         - name: SLACK_TEAM_ID
-          value: TD1FSS3L2
+          value: {{ .Values.slack.team_id }}
         - name: SLACK_TOKEN
           value: {{ .Values.slack.token }}
         - name: TWILIO_ACCOUNT_SID

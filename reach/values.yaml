@@ -4,6 +4,7 @@ image:
 
 slack:
   token: xoxp-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  team_id: xxxxxxxxxx
 
 twilio:
   account_sid: ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
