@@ -1,10 +1,11 @@
 import requests
 import logging
-from flask.logging import default_handler
+#from flask.logging import default_handler  # FIXME: this line does not work in Flask 0.12.2, causing test_app.py to fail
 from requests.auth import HTTPBasicAuth
 from json import loads
 from datetime import datetime
 from utils.helpers import channel_token
+from utils.logger import logger
 
 """
 The profile and session IDs are equal to channel_token(phone_number)
@@ -13,8 +14,6 @@ The profile and session IDs are equal to channel_token(phone_number)
 ENDPOINT = "http://unomi:8181"
 AUTH = ('karaf','karaf')
 
-logger = logging.getLogger('flask.app')
-logger.addHandler(default_handler)
 
 class Unomi:
     def create_profile(self, profile_id, properties):

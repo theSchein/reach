@@ -10,7 +10,6 @@ class Twilio:
     self.messaging_service_sid = os.environ["TWILIO_MESSAGE_SERVICE_SID"]
 
 
-
   def text(self, number, body=""):
     message = self.client.messages.create(
       to=number,
@@ -19,3 +18,5 @@ class Twilio:
     )
 
     return "200"
+
+    

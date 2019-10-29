@@ -34,9 +34,10 @@ def validate_number(number):
     return False
 
 
-def to_twilio_number(number):
+def to_E_164_number(number):
   """
-  Validates and formats the number for Twilio
+  Validates and formats phone numbers to the E.164 international format
+  adopted by Twilio: https://www.twilio.com/docs/glossary/what-e164
   Raises an error for invalid numbers
   """
   number = validate_number(number)

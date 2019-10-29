@@ -2,12 +2,9 @@ import os
 import re
 import logging
 import slack
-from flask.logging import default_handler
-from utils.helpers import channel_token, to_twilio_number
-from clients.twilio import Twilio # TODO: Remove dependancy
-
-logger = logging.getLogger('flask.app')
-logger.addHandler(default_handler)
+#from flask.logging import default_handler  # FIXME: this line does not work in Flask 0.12.2, causing test_slack.py to fail
+from utils.helpers import channel_token, to_E_164_number
+from utils.logger import logger
 
 class Team:
     """
@@ -30,10 +27,10 @@ class Slack:
     self.sc =slack.WebClient(token=os.environ['SLACK_TOKEN'])
 
 
-  def start_engagement(self, number):
+  def start_engagement(self, number, texting_client=None):
     logger.error("Inside start engagement: {0}".format(number))
     group_name = channel_token(number)
-    phone_number = to_twilio_number(number)
+    phone_number = to_E_164_number(number)
     # TODO: Add disclaimer, informed consent language
     message = """
 Hello, from the Reach Test Network!
@@ -59,8 +56,8 @@ Reply Stop to stop all contact.
 
     group_id = group["group"]["id"]
     self.message_to_group(message, group_id)
-    if is_intro:
-        text = Twilio().text(phone_number, message)
+    if is_intro and texting_client is not None:
+        text = texting_client.text(phone_number, message)
 
 
 
@@ -142,6 +139,7 @@ Reply Stop to stop all contact.
 
   def get_phone_number_by_user_name(self, user_name):
       # TODO: Mocked because it's difficult to pull this from slack
+      # TODO: Update test if we pull this from slack later
       team = Team()
       for member in team.members:
           logger.debug(member)

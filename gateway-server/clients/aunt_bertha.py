@@ -1,12 +1,10 @@
 import logging
-from flask.logging import default_handler
+#from flask.logging import default_handler  # FIXME: this line does not work in Flask 0.12.2, causing test_slack.py to fail
 from urllib import request
 from bs4 import BeautifulSoup
 from urllib.parse import quote
+from utils.logger import logger
 
-
-logger = logging.getLogger('flask.app')
-logger.addHandler(default_handler)
 
 class AuntBertha:
     def search(self, keywords, zipcode):
@@ -15,7 +13,7 @@ class AuntBertha:
 
         Returns a list of 5 dictionaries formatted for Slack attachments
         """
-        # TODO: Need to figure out how to do a callback to slack that takes more than 3 seconds 
+        # TODO: Need to figure out how to do a callback to slack that takes more than 3 seconds
         # headers = {'User-Agent': 'Mozilla/5.0 (Linux; Android 5.1.1; SM-G928X Build/LMY47X) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.83 Mobile Safari/537.36'}
         #
         # url = 'https://www.auntbertha.com/search/text?' + \

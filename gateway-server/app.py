@@ -1,6 +1,6 @@
 import logging
 from flask import Flask, request, render_template, flash, jsonify, session, redirect, url_for
-from utils.helpers import validate_number, to_twilio_number, return_facilities
+from utils.helpers import validate_number, to_E_164_number, return_facilities
 from clients.slack import Slack
 from clients.twilio import Twilio
 from clients.unomi import Unomi
@@ -62,7 +62,7 @@ def web_submit():
     number = validate_number(number)
     body = request.values.get('Body', None)
 
-    channel, phone_number = slack_client.start_engagement(number)
+    channel, phone_number = slack_client.start_engagement(number, twilio_client)
     profile = unomi_client.create_profile(profile_id=channel,
                                       properties={'phoneNumber': phone_number})
     assert(profile['itemId'] == channel) # Sanity check
@@ -84,7 +84,7 @@ def message():
     from_city = request.values.get('FromCity', None)
     from_state = request.values.get('FromState', None)
 
-    number = to_twilio_number(request.values.get('From', None))
+    number = to_E_164_number(request.values.get('From', None))
     channel = unomi_client.channel_from_phone_number(number)
     profile = unomi_client.profile_search(channel)
     app.logger.error("SLACK CHANNEL?: {0}".format(slack_client.does_channel_exist(channel)))
@@ -212,8 +212,12 @@ def need():
     try:
         app.logger.info(profile)
         needs = profile["properties"]["needs"]
-        needs = list(set(needs.append(need)))
+        needs.append(need)
+        needs = list(set(needs))
     except TypeError:
+        # FIXME: what does unomi return if there are no needs previously?
+        # If an empty array, the above section will work, and we do not need to
+        # catch a TypeError exception.  Else, let's add a test for this case
         needs = [need]
     profile["properties"]["needs"] = needs
     unomi_client.update_profile(channel_name, profile["properties"])
@@ -280,7 +284,7 @@ def event():
     channel_id = request.values.get('channel_id', None)
     user_name = request.values.get('user_name', None)
     event = body.strip()
-    profile = unomi_client.profile_search(channel_name)
+    profile = unomi_client.profile_search(channel_name) # NOTE: why is this function called?
     unomi_client.track_event(channel_name, 'userGenerated', {'value': event}, user_name)
 
     return jsonify(
