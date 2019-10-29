@@ -44,6 +44,11 @@ def index():
     return render_template('index.html')
 
 
+@app.route('/terms')
+def terms():
+    return render_template('terms.html')
+
+
 @app.route('/submit', methods=['POST'])
 def web_submit():
     """
