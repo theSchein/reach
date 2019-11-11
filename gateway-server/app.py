@@ -1,5 +1,8 @@
 import logging
 from flask import Flask, request, render_template, flash, jsonify, session, redirect, url_for
+from flask_sqlalchemy import SQLAlchemy
+from requests_oauthlib import OAuth2Session
+from requests.exceptions import HTTPError
 from utils.helpers import validate_number, to_E_164_number, return_facilities
 from clients.slack import Slack
 from clients.twilio import Twilio
@@ -10,16 +13,56 @@ from datetime import datetime
 from utils.user import User
 import sqlite3
 import os
-
+import datetime
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
 
 # TODO: Set up application logging
 
+## Configuration
+basedir = os.path.abspath(os.path.dirname(__file__))
+
+
+class Auth:
+    CLIENT_ID = ('319250717893-hg2muasu58ldbfr7vf9aoiqkm79l1jq2.apps.googleusercontent.com')
+    CLIENT_SECRET = 'THGTn1B9AkrzvWMIKDERac8i'
+    REDIRECT_URI = 'http://localhost:5000/oauth-redirect'
+    AUTH_URI = 'https://accounts.google.com/o/oauth2/auth'
+    TOKEN_URI = 'https://accounts.google.com/o/oauth2/token'
+    USER_INFO = 'https://www.googleapis.com/userinfo/v2/me'
+    SCOPE = ['profile', 'email']
+
+class Config:
+    APP_NAME = "Test Google Login"
+    SECRET_KEY = os.environ.get("SECRET_KEY") or "somethingsecret"
+
+
+class DevConfig(Config):
+    DEBUG = True
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, "db/database.db")
+    # SQLALCHEMY_DATABASE_URI = os.path.join(basedir, "db/database.db")
+
+
+class ProdConfig(Config):
+    DEBUG = True
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, "prod.db") #change to production database
+
+
+config = {
+    "dev": DevConfig,
+    "prod": ProdConfig,
+    "default": DevConfig
+}
+
+## Application Creation
 app = Flask(__name__)
 # app.secret_key = os.environ["SECRET_KEY"] or b'_5#y2L"F4Q8z\n\xec]/' # or not working!?
 app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
 # app.config['TESTING'] = False
 # app.config['LOGIN_DISABLED'] = False
+
+# SQL Database configure
+app.config.from_object(config['dev'])
+db = SQLAlchemy(app)
 
 slack_client = Slack()
 twilio_client = Twilio()
@@ -36,10 +79,23 @@ def internal_error(error):
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
+login_manager.session_protection = "strong"
+
+
+## Configure Database
+class User(db.Model):
+    __tablename__ = "users"
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(100), unique=True, nullable=False)
+    name = db.Column(db.String(100), nullable=True)
+    avatar = db.Column(db.String(200))
+    tokens = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow())
 
 
 
 @app.route('/')
+@login_required
 def index():
     return render_template('index.html')
 
@@ -122,7 +178,10 @@ def text():
     """
     Callback for Slack. /send commands in Slack will trigger a post to this
     route with parameters as defined here:
-    https://api.slack.com/slash-commands#app_command_handling
+    https://api.
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))slack.com/slash-commands#app_command_handling
     """
     channel_name = request.values.get('channel_name', None)
     body = request.values.get('text', None)
@@ -564,37 +623,98 @@ def profiles_needs_data():
     return jsonify( {'pie_data': pie_data, 'bar_series': bar_series, 'counties': list(set(counties))} )
 
 
+@app.route('/oauth-redirect')
+def auth():
+    return render_template('index.html')
 
 
 
 
+# user managment/routes POSSIBLY DEPRECATED
+# @login_manager.user_loader
+# def load_user(user_id):
+#     return User.get(user_id)
 
-# user managment/routes
-@login_manager.user_loader
-def load_user(user_id):
-    return User.get(user_id)
+# @login_manager.user_loader POSSIBLY DEPRECATED
+# def load_user(user_id):
+#     return User.query.get(int(user_id))
 
-@app.route('/login', methods=['GET', 'POST'])
+
+## Post method Login DEPRECATED
+# @app.route('/login', methods=['GET', 'POST'])
+# def login():
+#     if request.method == 'POST':
+#         user = User.validate(request.form["username"], request.form["password"])
+#         if user is None:
+#             flash('Invalid username or password')
+#             return redirect(url_for('login'))
+#         login_user(user)
+#
+#         flash('Logged in successfully.')
+#
+#         next = request.args.get('next')
+#         # is_safe_url should check if the url is safe for redirects.
+#         # See http://flask.pocoo.org/snippets/62/ for an example.
+#         # if not is_safe_url(next):
+#             # return abort(400)
+#         return redirect(next or url_for('index'))
+#     else:
+#         if current_user.is_authenticated:
+#             return redirect(url_for('index'))
+#         return render_template('login.html')
+
+## Google OAuth Login
+@app.route('/login')
 def login():
-    if request.method == 'POST':
-        user = User.validate(request.form["username"], request.form["password"])
-        if user is None:
-            flash('Invalid username or password')
-            return redirect(url_for('login'))
-        login_user(user)
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    google = get_google_auth()
+    auth_url, state = google.authorization_url(
+        Auth.AUTH_URI, access_type='offline')
+    session['oauth_state'] = state
+    return render_template('login.html', auth_url=auth_url)
 
-        flash('Logged in successfully.')
 
-        next = request.args.get('next')
-        # is_safe_url should check if the url is safe for redirects.
-        # See http://flask.pocoo.org/snippets/62/ for an example.
-        # if not is_safe_url(next):
-            # return abort(400)
-        return redirect(next or url_for('index'))
+@app.route('/gCallback')
+def callback():
+    # Redirect user to home page if already logged in.
+    if current_user is not None and current_user.is_authenticated:
+        return redirect(url_for('index.html'))
+    if 'error' in request.args:
+        if request.args.get('error') == 'access_denied':
+            return 'You denied access.'
+        return 'Error encountered.'
+    if 'code' not in request.args and 'state' not in request.args:
+        return redirect(url_for('login.html'))
     else:
-        if current_user.is_authenticated:
+        # Execution reaches here when user has
+        # successfully authenticated our app.
+        google = get_google_auth(state=session['oauth_state'])
+        try:
+            token = google.fetch_token(
+                Auth.TOKEN_URI,
+                client_secret=Auth.CLIENT_SECRET,
+                authorization_response=request.url)
+        except HTTPError:
+            return 'HTTPError occurred.'
+        google = get_google_auth(token=token)
+        resp = google.get(Auth.USER_INFO)
+        if resp.status_code == 200:
+            user_data = resp.json()
+            email = user_data['email']
+            user = User.query.filter_by(email=email).first()
+            if user is None:
+                user = User()
+                user.email = email
+            user.name = user_data['name']
+            print(token)
+            user.tokens = json.dumps(token)
+            user.avatar = user_data['picture']
+            db.session.add(user)
+            db.session.commit()
+            login_user(user)
             return redirect(url_for('index'))
-        return render_template('login.html')
+        return 'Could not fetch your information.'
 
 
 
@@ -602,3 +722,19 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for('index'))
+
+
+## OAuth Helper Function
+def get_google_auth(state=None, token=None):
+    if token:
+        return OAuth2Session(Auth.CLIENT_ID, token=token)
+    if state:
+        return OAuth2Session(
+            Auth.CLIENT_ID,
+            state=state,
+            redirect_uri=Auth.REDIRECT_URI)
+    oauth = OAuth2Session(
+        Auth.CLIENT_ID,
+        redirect_uri=Auth.REDIRECT_URI,
+        scope=Auth.SCOPE)
+    return oauth

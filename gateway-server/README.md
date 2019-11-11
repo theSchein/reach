@@ -25,7 +25,7 @@ pip3 install -r requirements.txt
 ```
 export SLACK_TOKEN=AAAA
 export TWILIO_ACCOUNT_SID=AAAA
-export TWILIO_MESSAGE_SERVICE_ID=AAAA
+export TWILIO_MESSAGE_SERVICE_SID=AAAA
 export TWILIO_AUTH_TOKEN=AAAA
 export FLASK_APP=app.py
 ```
