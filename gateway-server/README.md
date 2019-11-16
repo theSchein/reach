@@ -21,14 +21,18 @@ This application connects clients with providers through SMS and web chat. Conve
 ```
 pip3 install -r requirements.txt
 ```
-2. Export the environmental variables for Slack and Twilio:
+2. Export the environmental variables for Slack, Twilio, and Google Oauth:
 ```
 export SLACK_TOKEN=AAAA
 export TWILIO_ACCOUNT_SID=AAAA
 export TWILIO_MESSAGE_SERVICE_SID=AAAA
 export TWILIO_AUTH_TOKEN=AAAA
+export GOOGLE_ID=[PASTE CLIENT ID HERE]
+export GOOGLE_SECRET=[PASTE CLIENT SECRET HERE]
 export FLASK_APP=app.py
 ```
+For the Google Oauth variables you must replace the text here with the credentials provided to you.
+
 3. Run the application:
 ```
 FLASK_ENV=development flask run

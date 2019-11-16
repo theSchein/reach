@@ -1,6 +1,6 @@
 import logging
 from flask import Flask, request, render_template, flash, jsonify, session, redirect, url_for
-from flask_sqlalchemy import SQLAlchemy
+#from flask_sqlalchemy import SQLAlchemy
 from requests_oauthlib import OAuth2Session
 from requests.exceptions import HTTPError
 from utils.helpers import validate_number, to_E_164_number, return_facilities
@@ -11,10 +11,16 @@ from clients.two_one_one import TwoOneOne
 from clients.aunt_bertha import AuntBertha
 from datetime import datetime
 from utils.user import User
+from oauthlib.oauth2 import WebApplicationClient
+import requests
 import sqlite3
 import os
 import datetime
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
+
+# Internal imports
+from db import init_db_command
+from user import User
 
 # TODO: Set up application logging
 
@@ -22,36 +28,12 @@ from flask_login import LoginManager, login_user, logout_user, current_user, log
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 
-class Auth:
-    CLIENT_ID = ('319250717893-hg2muasu58ldbfr7vf9aoiqkm79l1jq2.apps.googleusercontent.com')
-    CLIENT_SECRET = 'THGTn1B9AkrzvWMIKDERac8i'
-    REDIRECT_URI = 'http://localhost:5000/oauth-redirect'
-    AUTH_URI = 'https://accounts.google.com/o/oauth2/auth'
-    TOKEN_URI = 'https://accounts.google.com/o/oauth2/token'
-    USER_INFO = 'https://www.googleapis.com/userinfo/v2/me'
-    SCOPE = ['profile', 'email']
-
-class Config:
-    APP_NAME = "Test Google Login"
-    SECRET_KEY = os.environ.get("SECRET_KEY") or "somethingsecret"
-
-
-class DevConfig(Config):
-    DEBUG = True
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, "db/database.db")
-    # SQLALCHEMY_DATABASE_URI = os.path.join(basedir, "db/database.db")
-
-
-class ProdConfig(Config):
-    DEBUG = True
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, "prod.db") #change to production database
-
-
-config = {
-    "dev": DevConfig,
-    "prod": ProdConfig,
-    "default": DevConfig
-}
+# Configuration
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_ID", None)
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_SECRET", None)
+GOOGLE_DISCOVERY_URL = (
+    "https://accounts.google.com/.well-known/openid-configuration"
+)
 
 ## Application Creation
 app = Flask(__name__)
@@ -60,9 +42,8 @@ app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
 # app.config['TESTING'] = False
 # app.config['LOGIN_DISABLED'] = False
 
-# SQL Database configure
-app.config.from_object(config['dev'])
-db = SQLAlchemy(app)
+# # SQL Database configure
+# db = SQLAlchemy(app)
 
 slack_client = Slack()
 twilio_client = Twilio()
@@ -78,21 +59,29 @@ def internal_error(error):
 # Flask-Login Manager
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = "login"
-login_manager.session_protection = "strong"
+# login_manager.login_view = "login"
+# login_manager.session_protection = "strong"
+
+@login_manager.unauthorized_handler
+def unauthorized():
+    return "You must be logged in to access this content.", 403
 
 
 ## Configure Database
-class User(db.Model):
-    __tablename__ = "users"
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(100), unique=True, nullable=False)
-    name = db.Column(db.String(100), nullable=True)
-    avatar = db.Column(db.String(200))
-    tokens = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow())
+# Naive database setup
+try:
+    init_db_command()
+except sqlite3.OperationalError:
+    # Assume it's already been created
+    pass
 
+# OAuth2 client setup
+client = WebApplicationClient(GOOGLE_CLIENT_ID)
 
+# Flask-Login helper to retrieve a user from our db
+@login_manager.user_loader
+def load_user(user_id):
+    return User.get(user_id)
 
 @app.route('/')
 @login_required
@@ -623,118 +612,97 @@ def profiles_needs_data():
     return jsonify( {'pie_data': pie_data, 'bar_series': bar_series, 'counties': list(set(counties))} )
 
 
-@app.route('/oauth-redirect')
-def auth():
-    return render_template('index.html')
+# @app.route('/oauth-redirect')
+# def auth():
+#     print('please work')
+#     #google = get_google_auth(state=session['oauth_state'])
+#     print(user.tokens)
+#     print('ben is cool')
+#     return render_template('index.html')
 
-
-
-
-# user managment/routes POSSIBLY DEPRECATED
-# @login_manager.user_loader
-# def load_user(user_id):
-#     return User.get(user_id)
-
-# @login_manager.user_loader POSSIBLY DEPRECATED
-# def load_user(user_id):
-#     return User.query.get(int(user_id))
-
-
-## Post method Login DEPRECATED
-# @app.route('/login', methods=['GET', 'POST'])
-# def login():
-#     if request.method == 'POST':
-#         user = User.validate(request.form["username"], request.form["password"])
-#         if user is None:
-#             flash('Invalid username or password')
-#             return redirect(url_for('login'))
-#         login_user(user)
-#
-#         flash('Logged in successfully.')
-#
-#         next = request.args.get('next')
-#         # is_safe_url should check if the url is safe for redirects.
-#         # See http://flask.pocoo.org/snippets/62/ for an example.
-#         # if not is_safe_url(next):
-#             # return abort(400)
-#         return redirect(next or url_for('index'))
-#     else:
-#         if current_user.is_authenticated:
-#             return redirect(url_for('index'))
-#         return render_template('login.html')
-
-## Google OAuth Login
-@app.route('/login')
+@app.route("/login")
 def login():
-    if current_user.is_authenticated:
-        return redirect(url_for('index'))
-    google = get_google_auth()
-    auth_url, state = google.authorization_url(
-        Auth.AUTH_URI, access_type='offline')
-    session['oauth_state'] = state
-    return render_template('login.html', auth_url=auth_url)
+    # Find out what URL to hit for Google login
+    google_provider_cfg = get_google_provider_cfg()
+    authorization_endpoint = google_provider_cfg["authorization_endpoint"]
 
+    # Use library to construct the request for login and provide
+    # scopes that let you retrieve user's profile from Google
+    request_uri = client.prepare_request_uri(
+        authorization_endpoint,
+        redirect_uri=request.base_url + "/callback",
+        scope=["openid", "email", "profile"],
+    )
+    return redirect(request_uri)
 
-@app.route('/gCallback')
+@app.route("/login/callback")
 def callback():
-    # Redirect user to home page if already logged in.
-    if current_user is not None and current_user.is_authenticated:
-        return redirect(url_for('index.html'))
-    if 'error' in request.args:
-        if request.args.get('error') == 'access_denied':
-            return 'You denied access.'
-        return 'Error encountered.'
-    if 'code' not in request.args and 'state' not in request.args:
-        return redirect(url_for('login.html'))
+    # Get authorization code Google sent back to you
+    code = request.args.get("code")
+
+    # Find out what URL to hit to get tokens that allow you to ask for
+    # things on behalf of a user
+    google_provider_cfg = get_google_provider_cfg()
+    token_endpoint = google_provider_cfg["token_endpoint"]
+
+    # Prepare and send request to get tokens! Yay tokens!
+    token_url, headers, body = client.prepare_token_request(
+        token_endpoint,
+        authorization_response=request.url,
+        redirect_url=request.base_url,
+        code=code,
+    )
+    token_response = requests.post(
+        token_url,
+        headers=headers,
+        data=body,
+        auth=(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET),
+    )
+
+    # Parse the tokens!
+    client.parse_request_body_response(json.dumps(token_response.json()))
+
+    # Now that we have tokens (yay) let's find and hit URL
+    # from Google that gives you user's profile information,
+    # including their Google Profile Image and Email
+    userinfo_endpoint = google_provider_cfg["userinfo_endpoint"]
+    uri, headers, body = client.add_token(userinfo_endpoint)
+    userinfo_response = requests.get(uri, headers=headers, data=body)
+
+    # We want to make sure their email is verified.
+    # The user authenticated with Google, authorized our
+    # app, and now we've verified their email through Google!
+    if userinfo_response.json().get("email_verified"):
+        unique_id = userinfo_response.json()["sub"]
+        users_email = userinfo_response.json()["email"]
+        picture = userinfo_response.json()["picture"]
+        users_name = userinfo_response.json()["given_name"]
     else:
-        # Execution reaches here when user has
-        # successfully authenticated our app.
-        google = get_google_auth(state=session['oauth_state'])
-        try:
-            token = google.fetch_token(
-                Auth.TOKEN_URI,
-                client_secret=Auth.CLIENT_SECRET,
-                authorization_response=request.url)
-        except HTTPError:
-            return 'HTTPError occurred.'
-        google = get_google_auth(token=token)
-        resp = google.get(Auth.USER_INFO)
-        if resp.status_code == 200:
-            user_data = resp.json()
-            email = user_data['email']
-            user = User.query.filter_by(email=email).first()
-            if user is None:
-                user = User()
-                user.email = email
-            user.name = user_data['name']
-            print(token)
-            user.tokens = json.dumps(token)
-            user.avatar = user_data['picture']
-            db.session.add(user)
-            db.session.commit()
-            login_user(user)
-            return redirect(url_for('index'))
-        return 'Could not fetch your information.'
+        return "User email not available or not verified by Google.", 400
 
+    # Create a user in our db with the information provided
+    # by Google
+    user = User(
+        id_=unique_id, name=users_name, email=users_email, profile_pic=picture
+    )
 
+    # Doesn't exist? Add to database
+    if not User.get(unique_id):
+        User.create(unique_id, users_name, users_email, picture)
+
+    # Begin user session by logging the user in
+    login_user(user)
+
+    # Send user back to homepage
+    return redirect(url_for("index"))
 
 @app.route('/logout')
+@login_required
 def logout():
     logout_user()
     return redirect(url_for('index'))
 
 
 ## OAuth Helper Function
-def get_google_auth(state=None, token=None):
-    if token:
-        return OAuth2Session(Auth.CLIENT_ID, token=token)
-    if state:
-        return OAuth2Session(
-            Auth.CLIENT_ID,
-            state=state,
-            redirect_uri=Auth.REDIRECT_URI)
-    oauth = OAuth2Session(
-        Auth.CLIENT_ID,
-        redirect_uri=Auth.REDIRECT_URI,
-        scope=Auth.SCOPE)
-    return oauth
+def get_google_provider_cfg():
+    return requests.get(GOOGLE_DISCOVERY_URL).json()
