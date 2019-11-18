@@ -35,5 +35,5 @@ For the Google Oauth variables you must replace the text here with the credentia
 
 3. Run the application:
 ```
-FLASK_ENV=development flask run
+python3 app.py
 ```

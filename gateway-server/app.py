@@ -1,5 +1,12 @@
 import logging
-from flask import Flask, request, render_template, flash, jsonify, session, redirect, url_for
+from flask import Flask, redirect, request, url_for, jsonify, render_template
+from flask_login import (
+    LoginManager,
+    current_user,
+    login_required,
+    login_user,
+    logout_user,
+)
 #from flask_sqlalchemy import SQLAlchemy
 from requests_oauthlib import OAuth2Session
 from requests.exceptions import HTTPError
@@ -11,12 +18,16 @@ from clients.two_one_one import TwoOneOne
 from clients.aunt_bertha import AuntBertha
 from datetime import datetime
 from utils.user import User
+
 from oauthlib.oauth2 import WebApplicationClient
 import requests
+
 import sqlite3
 import os
+import json
+
+
 import datetime
-from flask_login import LoginManager, login_user, logout_user, current_user, login_required
 
 # Internal imports
 from db import init_db_command
@@ -64,16 +75,17 @@ login_manager.init_app(app)
 
 @login_manager.unauthorized_handler
 def unauthorized():
-    return "You must be logged in to access this content.", 403
-
+    return redirect(url_for('login'))
 
 ## Configure Database
-# Naive database setup
+#Naive database setup
+# init_db_command()
 try:
     init_db_command()
 except sqlite3.OperationalError:
-    # Assume it's already been created
+#     # Assume it's already been created
     pass
+
 
 # OAuth2 client setup
 client = WebApplicationClient(GOOGLE_CLIENT_ID)
@@ -86,7 +98,10 @@ def load_user(user_id):
 @app.route('/')
 @login_required
 def index():
-    return render_template('index.html')
+    if current_user.is_authenticated:
+        return render_template('index.html')
+    else:
+        return redirect(url_for('login'))
 
 
 @app.route('/terms')
@@ -176,7 +191,7 @@ def load_user(user_id):
     body = request.values.get('text', None)
     channel_id = request.values.get('channel_id', None)
     user_name = request.values.get('user_name', None)
-    app.logger.debug("Request: {0}".format(request.values))
+    #app.logger.debug("Request: {0}".format(request.values))
     channel_name = slack_client.group_name_from_group_id(channel_id)
     number = unomi_client.phone_number_from_channel(channel_name)
 
@@ -186,7 +201,7 @@ def load_user(user_id):
             twilio_client.text(number, body)
         except Exception as e:
             return jsonify(e)
-        app.logger.debug("Slack user: {0}".format(user_name))
+        #app.logger.debug("Slack user: {0}".format(user_name))
         unomi_client.track_outbound_message(channel_name, body, user_name)
 
         return jsonify(
@@ -454,7 +469,7 @@ def aunt_bertha():
     ex: /auntberta 19107 women recovery
 
     """
-    app.logger.debug("SLACK REQUEST: ", request.values)
+    #app.logger.debug("SLACK REQUEST: ", request.values)
     channel_name = request.values.get('channel_name', None)
     body = request.values.get('text', None)
     channel_id = request.values.get('channel_id', None)
@@ -540,7 +555,7 @@ def profiles_show(profile_id):
         try:
             user_name = event['source']['itemId']
             crs_name, phone_number = slack_client.get_phone_number_by_user_name(user_name)
-            app.logger.debug("{0}, {1}".format(crs_name, phone_number))
+            #app.logger.debug("{0}, {1}".format(crs_name, phone_number))
             key = (crs_name, phone_number)
             if key in crss_messages.keys():
                 crss_messages[key] += 1
@@ -612,20 +627,15 @@ def profiles_needs_data():
     return jsonify( {'pie_data': pie_data, 'bar_series': bar_series, 'counties': list(set(counties))} )
 
 
-# @app.route('/oauth-redirect')
-# def auth():
-#     print('please work')
-#     #google = get_google_auth(state=session['oauth_state'])
-#     print(user.tokens)
-#     print('ben is cool')
-#     return render_template('index.html')
-
 @app.route("/login")
 def login():
+    if current_user.is_authenticated:
+        print('authenticated')
+        return redirect(url_for('index'))
+
     # Find out what URL to hit for Google login
     google_provider_cfg = get_google_provider_cfg()
     authorization_endpoint = google_provider_cfg["authorization_endpoint"]
-
     # Use library to construct the request for login and provide
     # scopes that let you retrieve user's profile from Google
     request_uri = client.prepare_request_uri(
@@ -633,7 +643,10 @@ def login():
         redirect_uri=request.base_url + "/callback",
         scope=["openid", "email", "profile"],
     )
-    return redirect(request_uri)
+    print('THIS IS A URI')
+    print(request_uri)
+    return render_template('login.html',request_uri=request_uri)
+    #return redirect(request_uri)
 
 @app.route("/login/callback")
 def callback():
@@ -685,7 +698,9 @@ def callback():
     user = User(
         id_=unique_id, name=users_name, email=users_email, profile_pic=picture
     )
-
+    print(unique_id) #printing for testing purposesS
+    print(users_name)
+    print(users_email)
     # Doesn't exist? Add to database
     if not User.get(unique_id):
         User.create(unique_id, users_name, users_email, picture)
@@ -706,3 +721,7 @@ def logout():
 ## OAuth Helper Function
 def get_google_provider_cfg():
     return requests.get(GOOGLE_DISCOVERY_URL).json()
+
+# ## HTTPS
+if __name__ == "__main__":
+    app.run(ssl_context="adhoc")
