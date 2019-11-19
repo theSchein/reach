@@ -5,5 +5,4 @@ coolname
 beautifulsoup4
 websocket-client
 flask_login
-Flask-SQLAlchemy
 requests-oauthlib

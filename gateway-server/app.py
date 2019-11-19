@@ -7,7 +7,6 @@ from flask_login import (
     login_user,
     logout_user,
 )
-#from flask_sqlalchemy import SQLAlchemy
 from requests_oauthlib import OAuth2Session
 from requests.exceptions import HTTPError
 from utils.helpers import validate_number, to_E_164_number, return_facilities
@@ -26,10 +25,7 @@ import sqlite3
 import os
 import json
 
-
-import datetime
-
-# Internal imports
+# Internal imports from helper scripts
 from db import init_db_command
 from user import User
 
@@ -50,11 +46,6 @@ GOOGLE_DISCOVERY_URL = (
 app = Flask(__name__)
 # app.secret_key = os.environ["SECRET_KEY"] or b'_5#y2L"F4Q8z\n\xec]/' # or not working!?
 app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
-# app.config['TESTING'] = False
-# app.config['LOGIN_DISABLED'] = False
-
-# # SQL Database configure
-# db = SQLAlchemy(app)
 
 slack_client = Slack()
 twilio_client = Twilio()
@@ -70,8 +61,6 @@ def internal_error(error):
 # Flask-Login Manager
 login_manager = LoginManager()
 login_manager.init_app(app)
-# login_manager.login_view = "login"
-# login_manager.session_protection = "strong"
 
 @login_manager.unauthorized_handler
 def unauthorized():
@@ -79,11 +68,10 @@ def unauthorized():
 
 ## Configure Database
 #Naive database setup
-# init_db_command()
 try:
     init_db_command()
 except sqlite3.OperationalError:
-#     # Assume it's already been created
+    # Assume it's already been created
     pass
 
 
@@ -630,7 +618,6 @@ def profiles_needs_data():
 @app.route("/login")
 def login():
     if current_user.is_authenticated:
-        print('authenticated')
         return redirect(url_for('index'))
 
     # Find out what URL to hit for Google login
@@ -643,8 +630,7 @@ def login():
         redirect_uri=request.base_url + "/callback",
         scope=["openid", "email", "profile"],
     )
-    print('THIS IS A URI')
-    print(request_uri)
+
     return render_template('login.html',request_uri=request_uri)
     #return redirect(request_uri)
 
@@ -698,9 +684,7 @@ def callback():
     user = User(
         id_=unique_id, name=users_name, email=users_email, profile_pic=picture
     )
-    print(unique_id) #printing for testing purposesS
-    print(users_name)
-    print(users_email)
+
     # Doesn't exist? Add to database
     if not User.get(unique_id):
         User.create(unique_id, users_name, users_email, picture)
