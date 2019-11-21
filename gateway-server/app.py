@@ -31,7 +31,7 @@ from user import User
 
 # TODO: Set up application logging
 
-## Configuration
+# Configuration
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 
@@ -42,7 +42,7 @@ GOOGLE_DISCOVERY_URL = (
     "https://accounts.google.com/.well-known/openid-configuration"
 )
 
-## Application Creation
+# Application Creation
 app = Flask(__name__)
 # app.secret_key = os.environ["SECRET_KEY"] or b'_5#y2L"F4Q8z\n\xec]/' # or not working!?
 app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
@@ -170,16 +170,12 @@ def text():
     """
     Callback for Slack. /send commands in Slack will trigger a post to this
     route with parameters as defined here:
-    https://api.
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))slack.com/slash-commands#app_command_handling
     """
     channel_name = request.values.get('channel_name', None)
     body = request.values.get('text', None)
     channel_id = request.values.get('channel_id', None)
     user_name = request.values.get('user_name', None)
-    #app.logger.debug("Request: {0}".format(request.values))
+    app.logger.debug("Request: {0}".format(request.values))
     channel_name = slack_client.group_name_from_group_id(channel_id)
     number = unomi_client.phone_number_from_channel(channel_name)
 
@@ -189,7 +185,7 @@ def load_user(user_id):
             twilio_client.text(number, body)
         except Exception as e:
             return jsonify(e)
-        #app.logger.debug("Slack user: {0}".format(user_name))
+        app.logger.debug("Slack user: {0}".format(user_name))
         unomi_client.track_outbound_message(channel_name, body, user_name)
 
         return jsonify(
@@ -457,7 +453,7 @@ def aunt_bertha():
     ex: /auntberta 19107 women recovery
 
     """
-    #app.logger.debug("SLACK REQUEST: ", request.values)
+    app.logger.debug("SLACK REQUEST: ", request.values)
     channel_name = request.values.get('channel_name', None)
     body = request.values.get('text', None)
     channel_id = request.values.get('channel_id', None)
@@ -543,7 +539,7 @@ def profiles_show(profile_id):
         try:
             user_name = event['source']['itemId']
             crs_name, phone_number = slack_client.get_phone_number_by_user_name(user_name)
-            #app.logger.debug("{0}, {1}".format(crs_name, phone_number))
+            app.logger.debug("{0}, {1}".format(crs_name, phone_number))
             key = (crs_name, phone_number)
             if key in crss_messages.keys():
                 crss_messages[key] += 1
@@ -632,7 +628,6 @@ def login():
     )
 
     return render_template('login.html',request_uri=request_uri)
-    #return redirect(request_uri)
 
 @app.route("/login/callback")
 def callback():
